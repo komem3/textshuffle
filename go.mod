@@ -1,4 +1,4 @@
-module textshuffle
+module github.com/komem3/textshuffle
 
 go 1.15
 
