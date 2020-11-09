@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"strings"
@@ -41,11 +42,12 @@ func (cs *contents) add(str string) {
 	cs.words = append(cs.words, str)
 }
 
-var text = flag.String("t", "", "shuffle text. (required)")
+var text = flag.String("t", "", "shuffle text.")
+var file = flag.String("f", "", "shuffle file.")
 
 func main() {
 	flag.Parse()
-	if *text == "" {
+	if *text == "" && *file == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -56,7 +58,23 @@ func main() {
 		panic(err)
 	}
 
-	tokens := t.Tokenize(*text)
+	txt := *text
+	if *file != "" {
+		f, err := os.Open(*file)
+		if err != nil {
+			fmt.Fprint(os.Stderr, err)
+			os.Exit(1)
+		}
+		defer f.Close()
+		fbytes, err := ioutil.ReadAll(f)
+		if err != nil {
+			fmt.Fprint(os.Stderr, err)
+			return
+		}
+		txt = string(fbytes)
+	}
+
+	tokens := t.Tokenize(txt)
 	var cs contents
 	var wg sync.WaitGroup
 	for i, token := range tokens {
@@ -74,5 +92,5 @@ func main() {
 		cs.add(token.Surface)
 	}
 	wg.Wait()
-	fmt.Printf("%s\n", strings.Join(cs.words, "")) // output for debug
+	fmt.Printf("%s\n", strings.Join(cs.words, ""))
 }
